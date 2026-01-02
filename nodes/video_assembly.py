@@ -70,7 +70,7 @@ def generate_ass_karaoke(state, alignment_data, topic_comment, pause_at_end, max
 
 def sync_to_cloud(file_path, row_id):
     """Syncs final assets to GitHub and updates Google Sheets status."""
-    GITHUB_USER, GITHUB_REPO, GITHUB_BRANCH = "polarityreverse", "Youtube-Automation", "master"
+    GITHUB_USER, GITHUB_REPO, GITHUB_BRANCH = "polarityreverse", "Content-Creation", "master"
     try:
         # In AWS, ensure the Git environment is initialized or use a dedicated API upload
         subprocess.run(["git", "add", file_path], check=True, capture_output=True)
@@ -80,7 +80,7 @@ def sync_to_cloud(file_path, row_id):
     except Exception as e:
         logger.error(f"Git Push failed for row {row_id}: {e}")
     
-    raw_url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/output_assets/{os.path.basename(file_path)}"
+    raw_url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/assets/{os.path.basename(file_path)}"
     
     try:
         sheet = get_worksheet("ideas")
