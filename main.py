@@ -48,8 +48,7 @@ def get_ready_idea(sheet_name="ideas"):
 
         # Mapping headers to indices
         idx_map = {header: i for i, header in enumerate(headers)}
-        idx_yt = idx_map.get('Youtube Upload Status')
-        idx_insta = idx_map.get('Insta Upload Status')
+        idx_trigger = idx_map.get('Trigger Status')
         idx_idea = idx_map.get('Idea')
 
         pending_ideas = []
@@ -59,11 +58,9 @@ def get_ready_idea(sheet_name="ideas"):
             sheet_row = i + 2 
             
             # Check if row needs processing
-            yt_status = row[idx_yt].strip().upper() if len(row) > idx_yt else ""
-            insta_status = row[idx_insta].strip().upper() if len(row) > idx_insta else ""
+            trigger_status = row[idx_trigger].strip().upper() if len(row) > idx_trigger else ""
             
-            needs_upload = yt_status not in ('GIT-READY', 'UPLOADED') or \
-                           insta_status not in ('GIT-READY', 'UPLOADED')
+            needs_upload = trigger_status!='TRIGGERED'
 
             if needs_upload:
                 pending_ideas.append((sheet_row, row))
@@ -71,8 +68,8 @@ def get_ready_idea(sheet_name="ideas"):
                 uploaded_ideas.append(row[idx_idea])
 
         if not pending_ideas:
-            logger.info("Empty queue. Generating 5 new 'What Happens When' ideas...")
-            new_ideas = generate_5_ideas(uploaded_ideas)
+            logger.info("Empty queue. Generating 3 new 'What Happens When' ideas...")
+            new_ideas = generate_3_ideas(uploaded_ideas)
             
             today = datetime.date.today().strftime("%Y-%m-%d")
             ideas_to_add = [[today, idea, '', '', 'NOT-UPLOADED', '', 'NOT-UPLOADED', '', ''] for idea in new_ideas]
@@ -84,18 +81,33 @@ def get_ready_idea(sheet_name="ideas"):
 
         row_num, chosen_row = random.choice(pending_ideas)
         logger.info(f"🎯 Target Idea: {chosen_row[idx_idea]} | Row: {row_num}")
-        
+        worksheet.update_cell(row_num, 10, 'TRIGGERED')
         return {"row_index": row_num, "idea": chosen_row[idx_idea]}
 
     except Exception as e:
         logger.error(f"Error in get_ready_idea: {str(e)}")
         return None
 
-def generate_5_ideas(uploaded_ideas: List) -> List:
+def generate_3_ideas(uploaded_ideas: List) -> List:
     """LLM call to generate next viral science topics."""
     performance_data = get_performance_context()
     
-    prompt = f"Act as Zeteon Science Lead. Based on Context: {performance_data}. Avoid: {uploaded_ideas}"
+    prompt = f"""
+You are the Zeteon Science Lead.
+Your job is to propose three **viral, curiosity‑driven science explainer topics** optimized for short‑form video platforms.
+
+Use the following performance context to understand what resonates:
+{performance_data}
+
+Avoid repeating or overlapping with these previously uploaded ideas:
+{uploaded_ideas}
+
+Return only valid JSON that matches this structure:
+
+{{
+  "ideas": ["string", "string", ...]
+}}
+"""
     
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -132,8 +144,8 @@ def build_workflow():
     workflow.add_node("script_gen", script_generation)
     workflow.add_node("audio_gen", audio_generation)
     workflow.add_node("image_gen", image_generation)
-    workflow.add_node("assembly", video_stitching_slideshow)
-    workflow.add_node("upload", video_upload_node)
+    workflow.add_node("video_assembly", video_stitching_slideshow)
+    workflow.add_node("final_upload", video_upload_node)
 
     # Define Conditional Edge Logic
     def should_continue(state):
@@ -149,9 +161,9 @@ def build_workflow():
     # Define Connections
     workflow.add_edge("script_gen", "audio_gen")
     workflow.add_edge("audio_gen", "image_gen")
-    workflow.add_edge("image_gen", "assembly")
-    workflow.add_edge("assembly", "upload")
-    workflow.add_edge("upload", END)
+    workflow.add_edge("image_gen", "video_assembly")
+    workflow.add_edge("video_assembly", "final_upload")
+    workflow.add_edge("final_upload", END)
 
     return workflow.compile()
 

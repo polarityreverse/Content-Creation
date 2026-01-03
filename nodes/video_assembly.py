@@ -159,7 +159,7 @@ def video_stitching_slideshow(state):
                 f"[{vo_idx}:a]apad=pad_dur={pause_at_end},asplit=2[vo_p1][vo_p2];"
                 f"[{bg_idx}:a]volume=0.12,aloop=loop=-1:size=2e+09,afade=t=out:st={fade_start}:d=1[bg_loop];"
                 f"[bg_loop][vo_p1]sidechaincompress=threshold=0.05:ratio=12:attack=20:release=200[bg_duck];"
-                f"[vo_pad2][bg_duck]amix=inputs=2:duration=longest:weights=1 1[a_final]"
+                f"[vo_p2][bg_duck]amix=inputs=2:duration=longest:weights=1 1[a_final]"
             )
         else:
             audio_filter = f"[{vo_idx}:a]apad=pad_dur={pause_at_end}[a_final]"

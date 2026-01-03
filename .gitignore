@@ -1,0 +1,9 @@
+.env
+token.pickle
+credentials.json
+client_secret.json
+__pycache__/
+*.pyc
+assets/*.mp3
+assets/*.png
+assets/*.json
